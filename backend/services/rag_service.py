@@ -159,16 +159,18 @@ def get_session_answer(
     for doc in documents:
         vectorstore = _load_vectorstore(doc.collection_name, embeddings)
         try:
-            results = vectorstore.similarity_search_with_relevance_scores(
-                question, k=k_per_doc
-            )
-            for chunk, score in results:
-                # Ensure metadata carries the owning document's info
+            # Use similarity_search_with_score which returns raw L2 distances
+            # (lower distance = more similar).  Convert to a relevance score
+            # in (0, 1] via 1/(1+distance) so scores are always positive and
+            # directly comparable across different collections.
+            results = vectorstore.similarity_search_with_score(question, k=k_per_doc)
+            for chunk, distance in results:
+                relevance = 1.0 / (1.0 + distance)  # monotonically decreasing with distance
                 chunk.metadata.setdefault("doc_id", doc.id)
                 chunk.metadata.setdefault("filename", doc.filename)
-                all_scored.append((score, chunk))
+                all_scored.append((relevance, chunk))
         except Exception:
-            # Fallback: retrieve without scores (use neutral score 0.5)
+            # Fallback: retrieve without scores (neutral score 0.5)
             fallback_chunks = vectorstore.similarity_search(question, k=k_per_doc)
             for chunk in fallback_chunks:
                 chunk.metadata.setdefault("doc_id", doc.id)
