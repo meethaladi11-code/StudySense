@@ -1,0 +1,27 @@
+# StudySense backend — Phase 1 dependencies
+# Install into the project virtual environment:
+#   pip install -r backend/requirements.txt
+
+# ── Web framework ─────────────────────────────────────────────────────────────
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9       # required for UploadFile / Form parsing
+
+# ── HTTP client (health check) ────────────────────────────────────────────────
+httpx>=0.27.0
+
+# ── Database ──────────────────────────────────────────────────────────────────
+sqlalchemy>=2.0.0
+pydantic-settings>=2.0.0
+
+# ── LangChain stack (matches desktop app versions where possible) ─────────────
+langchain-community>=0.3.0
+langchain-ollama>=0.2.0
+langchain-chroma>=0.1.4
+langchain-text-splitters>=0.3.0
+
+# ── Vector store ──────────────────────────────────────────────────────────────
+chromadb>=0.5.0
+
+# ── PDF loading ───────────────────────────────────────────────────────────────
+pymupdf>=1.24.0

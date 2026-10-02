@@ -1,12 +1,19 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+
+# ── Legacy desktop app ────────────────────────────────────────────────────────
 *.pdf
-venv.venv/
-__pycache__/
-.DS_Store
 
-.venv/
-__pycache__/
-.DS_Store
-
-.venv/
-__pycache__/
-.DS_Store
+# ── StudySense runtime / generated data ──────────────────────────────────────
+backend/.env
+uploads/*
+!uploads/.gitkeep
+vector_db/*
+!vector_db/.gitkeep
+*.db
