@@ -153,7 +153,7 @@ export function AnalyticsPage() {
                       <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--color-muted)' }} />
                       <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--color-muted)' }} unit="%" />
                       <Tooltip
-                        formatter={(val: number) => [`${val.toFixed(1)}%`, 'Score']}
+                        formatter={(val: unknown) => [`${(val as number).toFixed(1)}%`, 'Score']}
                         contentStyle={{ border: '1px solid var(--color-border)', borderRadius: 8, boxShadow: 'var(--shadow-md)' }}
                       />
                       <Line

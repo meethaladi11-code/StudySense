@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { chatApi } from '../api/chat';
 import { documentsApi } from '../api/documents';
-import { AppShell, TopBar } from '../components/layout/Sidebar';
+import { AppShell } from '../components/layout/Sidebar';
 import { Spinner } from '../components/common/Spinner';
 import { Alert, EmptyState } from '../components/common/Alert';
 import { extractErrorMessage } from '../api/client';
