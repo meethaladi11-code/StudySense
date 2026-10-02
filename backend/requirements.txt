@@ -1,4 +1,4 @@
-# StudySense backend — Phase 1 dependencies
+# StudySense backend — Phase 1 + 2 + 3 dependencies
 # Install into the project virtual environment:
 #   pip install -r backend/requirements.txt
 
@@ -14,6 +14,10 @@ httpx>=0.27.0
 sqlalchemy>=2.0.0
 pydantic-settings>=2.0.0
 
+# ── Authentication (Phase 2) ──────────────────────────────────────────────────
+PyJWT>=2.8.0                  # JWT creation and validation
+pwdlib[argon2]>=0.2.0         # Argon2 password hashing (replaces passlib)
+
 # ── LangChain stack (matches desktop app versions where possible) ─────────────
 langchain-community>=0.3.0
 langchain-ollama>=0.2.0
@@ -23,5 +27,7 @@ langchain-text-splitters>=0.3.0
 # ── Vector store ──────────────────────────────────────────────────────────────
 chromadb>=0.5.0
 
-# ── PDF loading ───────────────────────────────────────────────────────────────
-pymupdf>=1.24.0
+# ── Document loading (Phase 3) ────────────────────────────────────────────────
+pymupdf>=1.24.0               # PDF
+python-docx>=1.1.0            # DOCX
+# TXT: handled via Python stdlib — no extra package needed

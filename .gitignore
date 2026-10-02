@@ -17,3 +17,4 @@ uploads/*
 vector_db/*
 !vector_db/.gitkeep
 *.db
+*.bak

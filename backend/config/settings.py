@@ -10,8 +10,6 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Resolve the .env file relative to this file so the app can be launched
-# from any working directory (as long as the package is on sys.path).
 _ENV_FILE = Path(__file__).parent.parent / ".env"
 
 
@@ -29,18 +27,27 @@ class Settings(BaseSettings):
     ollama_embedding_model: str = "all-minilm:latest"
 
     # ── Database ──────────────────────────────────────────────────────────
-    # Path is relative to the process CWD (repo root when using uvicorn).
     database_url: str = "sqlite:///./studysense.db"
 
     # ── Storage ───────────────────────────────────────────────────────────
     upload_dir: str = "uploads"
     vector_db_dir: str = "vector_db"
 
-    # ── RAG parameters ────────────────────────────────────────────────────
+    # ── RAG — single-document (Phase 1 legacy) ────────────────────────────
     chunk_size: int = 1200
     chunk_overlap: int = 100
     retrieval_k: int = 3
 
+    # ── RAG — multi-document sessions (Phase 3) ───────────────────────────
+    retrieval_k_per_document: int = 3   # chunks retrieved per document
+    max_context_chunks: int = 6         # hard cap sent to the LLM
 
-# Module-level singleton — import this everywhere.
+    # ── JWT authentication (Phase 2) ──────────────────────────────────────
+    # IMPORTANT: override JWT_SECRET_KEY with a long random secret in production.
+    #   Generate one with:  python -c "import secrets; print(secrets.token_hex(32))"
+    jwt_secret_key: str = "CHANGE-ME-GENERATE-WITH-openssl-rand-hex-32"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 1440  # 24 hours
+
+
 settings = Settings()
