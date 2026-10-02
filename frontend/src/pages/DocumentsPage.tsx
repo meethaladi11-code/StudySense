@@ -30,18 +30,27 @@ export function DocumentsPage() {
   const [success, setSuccess] = useState('');
   const [isDragging, setIsDragging] = useState(false);
 
-  useEffect(() => { loadDocs(); }, []);
+  useEffect(() => {
+    let ignore = false;
+    documentsApi
+      .list()
+      .then((data) => {
+        if (!ignore) {
+          setDocs(data);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          setError(extractErrorMessage(err));
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
-  async function loadDocs() {
-    setLoading(true);
-    try {
-      setDocs(await documentsApi.list());
-    } catch (err) {
-      setError(extractErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleUpload(file: File) {
     setError('');

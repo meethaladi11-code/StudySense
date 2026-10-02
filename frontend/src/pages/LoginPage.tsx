@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { extractErrorMessage } from '../api/client';
 import { Spinner } from '../components/common/Spinner';
 import { Alert } from '../components/common/Alert';

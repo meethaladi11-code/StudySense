@@ -4,45 +4,42 @@
  */
 
 import React, {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
 } from 'react';
 import { authApi } from '../api/auth';
 import type { UserResponse } from '../types/api';
-
-interface AuthContextValue {
-  user: UserResponse | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (token: string) => Promise<void>;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext } from './authContextDef';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('ss_token'));
 
   // On mount, try to restore session from stored token
   useEffect(() => {
     const token = localStorage.getItem('ss_token');
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
+    if (!token) return;
+
+    let ignore = false;
     authApi
       .me()
-      .then((u) => setUser(u))
+      .then((u) => {
+        if (!ignore) setUser(u);
+      })
       .catch(() => {
         // Token invalid / expired — clear it
         localStorage.removeItem('ss_token');
+        if (!ignore) setUser(null);
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (!ignore) setIsLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const login = useCallback(async (token: string) => {
@@ -68,10 +65,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
 }

@@ -47,6 +47,21 @@ function SourcesList({ sources }: { sources: NonNullable<ChatMessagePublic['sour
   );
 }
 
+function createClientMessage(
+  role: 'user' | 'assistant',
+  content: string,
+  sources: ChatMessagePublic['sources'] = null,
+  offset = 0
+): ChatMessagePublic {
+  return {
+    id: Date.now() + offset,
+    role,
+    content,
+    sources,
+    created_at: new Date().toISOString(),
+  };
+}
+
 export function ChatPage() {
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
   const [activeSession, setActiveSession] = useState<ChatSessionDetail | null>(null);
@@ -112,25 +127,13 @@ export function ChatPage() {
     setError('');
     setSending(true);
 
-    const userMsg: ChatMessagePublic = {
-      id: Date.now(),
-      role: 'user',
-      content: text.trim(),
-      sources: null,
-      created_at: new Date().toISOString(),
-    };
+    const userMsg = createClientMessage('user', text.trim(), null, 0);
     setMessages((prev) => [...prev, userMsg]);
     setQuestion('');
 
     try {
       const response = await chatApi.sendMessage(activeSession.id, { question: text.trim() });
-      const assistantMsg: ChatMessagePublic = {
-        id: Date.now() + 1,
-        role: 'assistant',
-        content: response.answer,
-        sources: response.sources,
-        created_at: new Date().toISOString(),
-      };
+      const assistantMsg = createClientMessage('assistant', response.answer, response.sources, 1);
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err) {
       setError(extractErrorMessage(err));

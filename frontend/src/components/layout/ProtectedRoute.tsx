@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { PageLoader } from '../common/Spinner';
 
 /** Wraps protected routes — redirects to /login if unauthenticated. */
