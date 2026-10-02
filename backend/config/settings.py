@@ -49,5 +49,19 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440  # 24 hours
 
+    # ── Quiz generation (Round 2 / Phase 4) ──────────────────────────────
+    max_quiz_context_chunks: int = 12   # max chunks sent to LLM for quiz gen
+    max_quiz_questions: int = 20        # upper bound on num_questions
+    min_quiz_questions: int = 3         # lower bound on num_questions
+
+    # ── Analytics / weak-topic thresholds (Round 2 / Phase 5) ────────────
+    weak_topic_threshold: int = 60      # accuracy < this → weak
+    strong_topic_threshold: int = 80    # accuracy >= this → strong
+    min_topic_questions: int = 2        # min answers before classifying topic
+
+    # ── Improvement coach (Round 2) ───────────────────────────────────────
+    practice_question_count: int = 5    # questions per targeted practice quiz
+    retest_question_count: int = 5      # questions per retest quiz
+
 
 settings = Settings()

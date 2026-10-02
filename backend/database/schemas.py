@@ -1,21 +1,18 @@
 """
-Pydantic request / response schemas for StudySense Phases 1, 2, and 3.
-
-Schemas are kept separate from SQLAlchemy models so the API contract is
-decoupled from the database layout.
+Pydantic request / response schemas for StudySense Round 1 + Round 2.
 """
 
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-# ── Document schemas ──────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# ROUND 1 SCHEMAS (unchanged)
+# ══════════════════════════════════════════════════════════════════════════════
 
 class DocumentResponse(BaseModel):
-    """API response representation of an uploaded document."""
-
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -29,49 +26,31 @@ class DocumentResponse(BaseModel):
     user_id: Optional[int] = None
 
 
-# ── Source / chat schemas ─────────────────────────────────────────────────────
-
 class SourceMetadata(BaseModel):
-    """Metadata for a single retrieved document chunk."""
-
-    document_id: Optional[int] = Field(
-        None, description="ID of the source document (multi-doc sessions)."
-    )
+    document_id: Optional[int] = None
     filename: str
-    page: Optional[int] = Field(None, description="0-indexed page from PyMuPDF; null for TXT/DOCX.")
-    start_index: Optional[int] = Field(
-        None, description="Character offset within the original document."
-    )
-    content_preview: str = Field(..., description="First 300 chars of the retrieved chunk.")
+    page: Optional[int] = None
+    start_index: Optional[int] = None
+    content_preview: str
 
 
 class ChatRequest(BaseModel):
-    """Legacy single-document Q&A request (Phase 1 /api/chat/ask)."""
-
-    document_id: int = Field(..., description="ID of the uploaded document to query.")
-    question: str = Field(..., description="The student's question.")
+    document_id: int
+    question: str
 
 
 class ChatResponse(BaseModel):
-    """Structured answer returned to the student."""
-
     answer: str
     sources: list[SourceMetadata]
 
 
-# ── Auth schemas (Phase 2) ────────────────────────────────────────────────────
-
 class UserCreate(BaseModel):
-    """Registration request."""
-
-    email: str = Field(..., description="Valid e-mail address.")
+    email: str
     username: str = Field(..., min_length=3, max_length=50)
-    password: str = Field(..., min_length=6, description="Plain-text password (hashed server-side).")
+    password: str = Field(..., min_length=6)
 
 
 class UserResponse(BaseModel):
-    """Safe public representation of a user — never includes hashed_password."""
-
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -91,20 +70,12 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-# ── Chat session schemas (Phase 3) ────────────────────────────────────────────
-
 class ChatSessionCreate(BaseModel):
-    """Request to create a new study session."""
-
     title: str = Field(..., min_length=1, max_length=200)
-    document_ids: list[int] = Field(
-        ..., min_length=1, description="IDs of documents owned by the user to attach."
-    )
+    document_ids: list[int] = Field(..., min_length=1)
 
 
 class ChatSessionSummary(BaseModel):
-    """Lightweight session listing (no messages)."""
-
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -114,8 +85,6 @@ class ChatSessionSummary(BaseModel):
 
 
 class ChatMessagePublic(BaseModel):
-    """A single message with optionally parsed sources."""
-
     id: int
     role: str
     content: str
@@ -124,8 +93,6 @@ class ChatMessagePublic(BaseModel):
 
 
 class ChatSessionDetail(BaseModel):
-    """Full session: metadata + attached documents + message history."""
-
     id: int
     title: str
     created_at: datetime
@@ -135,6 +102,149 @@ class ChatSessionDetail(BaseModel):
 
 
 class SessionMessageRequest(BaseModel):
-    """New message posted into a session."""
-
     question: str = Field(..., min_length=1)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ROUND 2 SCHEMAS
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Quiz generation ───────────────────────────────────────────────────────────
+
+class QuizGenerateRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    document_ids: list[int] = Field(..., min_length=1)
+    num_questions: int = Field(..., ge=3, le=20)
+    difficulty: str = Field("mixed", description="easy | medium | hard | mixed")
+
+
+class QuizSummary(BaseModel):
+    """Lightweight quiz listing — no questions."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    quiz_type: str
+    target_topic: Optional[str] = None
+    created_at: datetime
+    question_count: int = 0
+
+
+# ── Student-facing question (NO correct_answer, NO explanation) ───────────────
+
+class QuizQuestionForStudent(BaseModel):
+    """
+    Safe quiz question for the take endpoint.
+    Correct answer and explanation are deliberately excluded.
+    """
+    question_id: int
+    question_text: str
+    options: dict[str, str]   # {"A": "...", "B": "...", "C": "...", "D": "..."}
+    topic: str
+    difficulty: str
+
+
+class QuizTakeResponse(BaseModel):
+    quiz_id: int
+    title: str
+    questions: list[QuizQuestionForStudent]
+
+
+# ── Quiz submission ───────────────────────────────────────────────────────────
+
+class AnswerSubmission(BaseModel):
+    question_id: int
+    selected_answer: str = Field(..., pattern="^[ABCD]$")
+
+
+class QuizSubmitRequest(BaseModel):
+    answers: list[AnswerSubmission] = Field(..., min_length=1)
+
+
+class ReviewItem(BaseModel):
+    """Full review row returned after submission — correct answer revealed here."""
+    question_id: int
+    question_text: str
+    selected_answer: str
+    correct_answer: str
+    is_correct: bool
+    explanation: str
+    topic: str
+    sources: Optional[list[SourceMetadata]] = None
+
+
+class QuizSubmitResponse(BaseModel):
+    attempt_id: int
+    correct_count: int
+    total_questions: int
+    score_percentage: float
+    review: list[ReviewItem]
+
+
+# ── Attempt history ───────────────────────────────────────────────────────────
+
+class AttemptSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    quiz_id: int
+    started_at: datetime
+    submitted_at: Optional[datetime] = None
+    correct_count: int
+    total_questions: int
+    score_percentage: float
+
+
+# ── Analytics ─────────────────────────────────────────────────────────────────
+
+class AnalyticsOverview(BaseModel):
+    total_quizzes: int
+    total_attempts: int
+    average_score: float
+    questions_answered: int
+    correct_answers: int
+
+
+class TopicStat(BaseModel):
+    topic: str
+    questions_answered: int
+    correct: int
+    accuracy: float
+    status: str   # strong | improving | weak | insufficient_data
+
+
+class WeakTopicSummary(BaseModel):
+    topic: str
+    accuracy: float
+    questions_answered: int
+    incorrect: int
+
+
+# ── Improvement plans ─────────────────────────────────────────────────────────
+
+class ImprovementPlanRequest(BaseModel):
+    topic: str = Field(..., min_length=1)
+
+
+class ImprovementPlanResponse(BaseModel):
+    id: int
+    topic: str
+    baseline_accuracy: float
+    latest_accuracy: Optional[float] = None
+    accuracy_change: Optional[float] = None   # latest - baseline (computed)
+    focus_areas: list[str]
+    study_plan: str
+    recommended_minutes: int
+    source_refs: Optional[list[SourceMetadata]] = None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class PracticeQuizResponse(BaseModel):
+    """Response from /practice and /retest: the safe student-facing quiz."""
+    quiz_id: int
+    title: str
+    quiz_type: str
+    target_topic: str
+    questions: list[QuizQuestionForStudent]
